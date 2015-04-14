@@ -1,12 +1,10 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Uploader(models.Model):
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
-    username = models.CharField(max_length=32)
-    password = models.CharField(max_length=32)
-    is_active = models.BooleanField()
+    user = models.OneToOneField(User)
+    is_active = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.username
@@ -14,7 +12,7 @@ class Uploader(models.Model):
 
 class Document(models.Model):
     uploader = models.ForeignKey(Uploader)
-    file_name = models.CharField(max_length=200)
+    csvfile = models.FileField(upload_to='uploads/%Y/%m/%d')
     upload_date = models.DateTimeField('date uploaded')
 
     def __unicode__(self):
