@@ -12,8 +12,10 @@ class Uploader(models.Model):
 
 class Document(models.Model):
     uploader = models.ForeignKey(Uploader)
-    csvfile = models.FileField(upload_to='uploads/%Y/%m/%d')
-    upload_date = models.DateTimeField('date uploaded', auto_now_add=True)
+    csvfile = models.FileField(upload_to='uploads/%Y/%m/%d',
+                               verbose_name='file')
+    upload_date = models.DateTimeField(auto_now_add=True,
+                                       verbose_name="date uploaded")
 
     def __unicode__(self):
         timeformat = "%Y%m%d_%H%M%S"
