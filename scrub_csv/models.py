@@ -15,9 +15,10 @@ class Document(models.Model):
     csvfile = models.FileField(upload_to='uploads/%Y/%m/%d')
     upload_date = models.DateTimeField('date uploaded')
 
-    # def __unicode__(self):
-    # FIXME: convert upload_date to string.
-    #     return "%s_%s", str(self.uploader.id), self.upload_date
+    def __unicode__(self):
+        timeformat = "%Y%m%d_%H%M%S"
+        return u'%s_%s' % (str(self.uploader.id),
+                           self.upload_date.strftime(timeformat))
 
 
 class Record(models.Model):
