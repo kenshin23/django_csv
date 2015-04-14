@@ -7,7 +7,7 @@ class Uploader(models.Model):
     is_active = models.BooleanField(default=True)
 
     def __unicode__(self):
-        return self.username
+        return self.user.username
 
 
 class Document(models.Model):
@@ -15,8 +15,9 @@ class Document(models.Model):
     csvfile = models.FileField(upload_to='uploads/%Y/%m/%d')
     upload_date = models.DateTimeField('date uploaded')
 
-    def __unicode__(self):
-        return self.uploader + "-" + self.file_name
+    # def __unicode__(self):
+    # FIXME: convert upload_date to string.
+    #     return "%s_%s", str(self.uploader.id), self.upload_date
 
 
 class Record(models.Model):

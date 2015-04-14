@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Uploader, Document, Record
+
+admin.site.register(Uploader)
+admin.site.register(Document)
+admin.site.register(Record)
