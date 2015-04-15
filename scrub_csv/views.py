@@ -1,7 +1,8 @@
 from django.shortcuts import get_object_or_404, render
 # TODO: Remove HttpResponse after removing method stubs
 from django.http import HttpResponse
-from django.conf import settings
+# XXX: In case the path to the files is needed in some other way, uncomment:
+# from django.conf import settings
 
 from .models import Document
 
@@ -32,22 +33,27 @@ def select_fields(request, document_id):
     document = get_object_or_404(Document, pk=document_id)
     import csv
 
-    print "Complete path to file: %s" % document.csvfile.path
     f = open(document.csvfile.path)
     csv_f = ""
     error = ""
 
     try:
-        dialect = csv.Sniffer().sniff(f.read(1024))
-        f.seek(0)
-        csv_f = csv.reader(f)
+        sample = f.read(1024)
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(sample)
     except Exception as e:
         error = "The file doesn't appear to be a valid CSV file."
         # error += " The error was %s", str(repr(e))
+    else:
+        has_header = sniffer.has_header(sample)
+        f.seek(0)
+        csv_f = csv.reader(f, dialect)
+        content = [row for row in csv_f]
 
     context = {
         'document': document,
-        'lines': csv_f,
+        'has_header': has_header,
+        'content': content,
         'error_message': error
     }
     return render(request, 'files/select.html', context)

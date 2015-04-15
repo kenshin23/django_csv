@@ -3,15 +3,28 @@
 {% if not error_message %}
     <form action="{% url 'files:process' document.id %}" method="post">
     {% csrf_token %}
-    <p>The uploaded file has {{ lines.0|length }} columns.</p>
-    <p>If the file appears to have a header row, please check this box: <input type="checkbox" name="has_headers" id="has_headers" value="1"</p>
     <p>Now, please select one of the following for each column:</p>
     <ul>
+    {% if existing_keys_list %}
         <li>An existing field from the database</li>
+    {% endif %}
         <li>Use the file's header, if available (if not, the column will be ignored)</li>
         <li>A custom field name</li>
-    </ul>
-    {% for choice in document.record_set.all %}
+        <li>Ignore this column</li>
+    </ul>    
+    <p>
+        Upon analysis, the first row of the file {% if has_header %}appears{% else %}does not appear{% endif %} to be a header row. (This could be wrong, though.)<br/>
+        Please confirm below:</p>
+    </p>
+    <p>
+        <label for="has_header_row">
+            <input type="checkbox" name="has_header_row" id="has_header_row" value="1" {% if has_header %}checked="checked"{%endif %}>
+            The file does have a header row
+        </label> <span>(Check/uncheck as needed)</span>
+    </p>
+
+    <p>The uploaded file has {{ content.0|length }} columns.</p>
+    {% for row in document.record_set.all %}
         <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
         <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br />
     {% endfor %}
