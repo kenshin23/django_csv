@@ -1,0 +1,23 @@
+<h1>Select header fields for {{ document }}</h1>
+
+{% if not error_message %}
+    <form action="{% url 'files:process' document.id %}" method="post">
+    {% csrf_token %}
+    <p>The uploaded file has {{ lines.0|length }} columns.</p>
+    <p>If the file appears to have a header row, please check this box: <input type="checkbox" name="has_headers" id="has_headers" value="1"</p>
+    <p>Now, please select one of the following for each column:</p>
+    <ul>
+        <li>An existing field from the database</li>
+        <li>Use the file's header, if available (if not, the column will be ignored)</li>
+        <li>A custom field name</li>
+    </ul>
+    {% for choice in document.record_set.all %}
+        <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
+        <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br />
+    {% endfor %}
+    <input type="submit" value="Select headers" />
+    </form>
+{% else %}
+    <p><strong>{{ error_message }}</strong></p>
+{% endif %}
+<p><a href="{% url 'files:detail' document.id %}">Go back to file details page.</a>

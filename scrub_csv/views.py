@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 # TODO: Remove HttpResponse after removing method stubs
 from django.http import HttpResponse
+from django.conf import settings
 
 from .models import Document
 
@@ -18,7 +19,8 @@ def new(request):
 
 
 def detail(request, document_id):
-    return HttpResponse("You're looking at file %s." % document_id)
+    document = get_object_or_404(Document, pk=document_id)
+    return render(request, 'files/detail.html', {'document': document})
 
 
 def records(request, document_id):
@@ -27,8 +29,28 @@ def records(request, document_id):
 
 
 def select_fields(request, document_id):
-    response = "This is step 1 for the document %s processing page."
-    return HttpResponse(response % document_id)
+    document = get_object_or_404(Document, pk=document_id)
+    import csv
+
+    print "Complete path to file: %s" % document.csvfile.path
+    f = open(document.csvfile.path)
+    csv_f = ""
+    error = ""
+
+    try:
+        dialect = csv.Sniffer().sniff(f.read(1024))
+        f.seek(0)
+        csv_f = csv.reader(f)
+    except Exception as e:
+        error = "The file doesn't appear to be a valid CSV file."
+        # error += " The error was %s", str(repr(e))
+
+    context = {
+        'document': document,
+        'lines': csv_f,
+        'error_message': error
+    }
+    return render(request, 'files/select.html', context)
 
 
 def process(request, document_id):
