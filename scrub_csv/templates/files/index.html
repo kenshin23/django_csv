@@ -1,0 +1,9 @@
+{% if latest_document_list %}
+    <ul>
+    {% for document in latest_document_list %}
+        <li><a href="/files/{{ document.id }}/">{{ document.csvfile.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No uploaded files are available.</p>
+{% endif %}
