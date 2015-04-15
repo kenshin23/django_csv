@@ -1,9 +1,16 @@
 from django.shortcuts import render
+# TODO: Remove HttpResponse after removing method stubs
 from django.http import HttpResponse
+
+from .models import Document
 
 
 def index(request):
-    return HttpResponse("Hello, world. You're at the scrubber index.")
+    latest_document_list = Document.objects.order_by('-upload_date')[:5]
+    context = {
+        'latest_document_list': latest_document_list,
+    }
+    return render(request, 'files/index.html', context)
 
 
 def new(request):
