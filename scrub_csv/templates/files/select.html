@@ -26,9 +26,16 @@
                 <td>
                 {% if existing_keys_list %}
                     <input type="radio" name="choice{{ forloop.counter }}" value="select"> Existing field<br/>
+                    <select name="key{{ forloop.counter}}">
+                        <option value="">Select a field</option>
+                    {% for key in existing_keys_list %}
+                        <option value="{{ key }}">{{ key }}</option>
+                    {% endfor %}
+                    </select>
                 {% endif %}
                     <input type="radio" name="choice{{ forloop.counter }}" value="header"> Use header<br/>
                     <input type="radio" name="choice{{ forloop.counter }}" value="custom"> Enter custom name<br/>
+                    <input type="text" name="custom{{ forloop.counter }}" value=""><br/>
                     <input type="radio" name="choice{{ forloop.counter }}" value="ignore"> Ignore column
                 </td>
             {% endfor %}
@@ -55,10 +62,6 @@
             The file does have a header row
         </label> <span>(Check/uncheck as needed)</span>
     </p>
-    {% for row in document.record_set.all %}
-        <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
-        <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br />
-    {% endfor %}
     <input type="submit" value="Select headers" />
     </form>
 {% else %}
