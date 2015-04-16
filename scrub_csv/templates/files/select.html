@@ -3,6 +3,7 @@
 {% if not error_message %}
     <form action="{% url 'files:process' document.id %}" method="post">
     {% csrf_token %}
+    <p>Showing you the first {{ line_count }} line</p>
     <p>Now, please select one of the following for each column:</p>
     <ul>
     {% if existing_keys_list %}
@@ -10,8 +11,40 @@
     {% endif %}
         <li>Use the file's header, if available (if not, the column will be ignored)</li>
         <li>A custom field name</li>
-        <li>Ignore this column</li>
-    </ul>    
+        <li>Ignore this column (do not import it to the database)</li>
+    </ul>
+
+    <table>
+        <thead>
+            <tr>
+            {% for column in content.0 %}
+                <th>Column #{{ forloop.counter }}</th>
+            {% endfor %}
+            </tr>
+            <tr>
+            {% for column in content.0 %}
+                <td>
+                {% if existing_keys_list %}
+                    <input type="radio" name="choice{{ forloop.counter }}" value="select"> Existing field<br/>
+                {% endif %}
+                    <input type="radio" name="choice{{ forloop.counter }}" value="header"> Use header<br/>
+                    <input type="radio" name="choice{{ forloop.counter }}" value="custom"> Enter custom name<br/>
+                    <input type="radio" name="choice{{ forloop.counter }}" value="ignore"> Ignore column
+                </td>
+            {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in content %}
+            <tr class="row-item{% if forloop.first %} row-first{% endif %}">
+            {% for item in row %}
+                <td>{{ item }}</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
     <p>
         Upon analysis, the first row of the file {% if has_header %}appears{% else %}does not appear{% endif %} to be a header row. (This could be wrong, though.)<br/>
         Please confirm below:</p>
@@ -22,8 +55,6 @@
             The file does have a header row
         </label> <span>(Check/uncheck as needed)</span>
     </p>
-
-    <p>The uploaded file has {{ content.0|length }} columns.</p>
     {% for row in document.record_set.all %}
         <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
         <label for="choice{{ forloop.counter }}">{{ choice.choice_text }}</label><br />

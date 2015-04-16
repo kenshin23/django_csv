@@ -36,6 +36,7 @@ def select_fields(request, document_id):
     f = open(document.csvfile.path)
     csv_f = ""
     error = ""
+    get_lines = 3
 
     try:
         sample = f.read(1024)
@@ -49,11 +50,16 @@ def select_fields(request, document_id):
         f.seek(0)
         csv_f = csv.reader(f, dialect)
         content = [row for row in csv_f]
+        if len(content) < get_lines:
+            line_count = len(content)
+        else:
+            line_count = get_lines
 
     context = {
         'document': document,
         'has_header': has_header,
-        'content': content,
+        'content': content[:line_count],
+        'line_count': line_count,
         'error_message': error
     }
     return render(request, 'files/select.html', context)
