@@ -20,7 +20,7 @@ Select header fields for {{ document }}
 
 {% block content %}
     {% if not error_message %}
-        <form role="form" action="{% url 'files:process' document.id %}" method="post" {% if layout != 'vertical' %}class="form-{{ layout }}"{% endif %}>
+        <form role="form" action="{% url 'files:process' document.id %}" method="post" class="form-horizontal">
         {% csrf_token %}
         <p>Showing you the first {{ line_count }} line(s) of the file.</p>
         <p>Now, please select one of the following for each column:</p>
@@ -33,7 +33,7 @@ Select header fields for {{ document }}
             <li>Ignore this column (do not import it to the database)</li>
         </ul>
 
-        <table id="csvfile" class="display responsive" width="100%">
+        <table id="csvfile" class="display responsive table table-striped table-bordered" width="100%">
             <thead>
                 <tr>
                 {% for column in content.0 %}
@@ -43,19 +43,46 @@ Select header fields for {{ document }}
                 <tr>
                 {% for column in content.0 %}
                     <td>
-                    {% if existing_keys_list %}
-                        <input type="radio" name="choice{{ forloop.counter }}" value="select"> Existing field<br/>
-                        <select name="key{{ forloop.counter}}" id="key{{ forloop.counter}}">
-                            <option value="">Select a field</option>
-                        {% for key in existing_keys_list %}
-                            <option value="{{ key }}">{{ key }}</option>
-                        {% endfor %}
-                        </select>
-                    {% endif %}
-                        <input type="radio" name="choice{{ forloop.counter }}" value="header"> Use header<br/>
-                        <input type="radio" name="choice{{ forloop.counter }}" value="custom"> Enter custom name<br/>
-                        <input type="text" name="custom{{ forloop.counter }}" value=""><br/>
-                        <input type="radio" name="choice{{ forloop.counter }}" value="ignore"> Ignore column
+                        {% if existing_keys_list %}
+                        <div class="form-group row">
+                            <label for="choice_key{{ forloop.counter}}">
+                            <input type="radio" name="choice{{ forloop.counter }}"
+                                   id="choice_key{{ forloop.counter }}"
+                                   value="select" class="form-control">
+                            <select name="key{{ forloop.counter}}"
+                                    id="key{{ forloop.counter }}"
+                                    class="form-control select_key">
+                                <option value="">Select a field</option>
+                            {% for key in existing_keys_list %}
+                                <option value="{{ key }}">{{ key }}</option>
+                            {% endfor %}
+                            </select> Existing field
+                            </label>
+                        </div>
+                        {% endif %}
+                        <div class="form-group row">
+                            <label for="choice_header{{ forloop.counter }}">
+                            <input type="radio" name="choice{{ forloop.counter }}"
+                                   id="choice_header{{ forloop.counter }}"
+                                   value="header" class="form-control"> Use header
+                            </label> 
+                        </div>
+                        <div class="form-group row">
+                            <label for="choice_custom{{ forloop.counter }}">
+                            <input type="radio" name="choice{{ forloop.counter }}"
+                                   id="choice_custom{{ forloop.counter}}"
+                                   value="custom" class="form-control">
+                            <input type="text" name="custom{{ forloop.counter }}"
+                                   value="" class="form-control custom_key"> Enter custom name
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="choice_ignore{{ forloop.counter }}">
+                            <input type="radio" name="choice{{ forloop.counter }}"
+                                   id="choice_ignore{{ forloop.counter }}"
+                                   value="ignore" class="form-control"> Ignore column
+                            </label>
+                        </div>
                     </td>
                 {% endfor %}
                 </tr>
@@ -96,7 +123,17 @@ Select header fields for {{ document }}
 <script src="{% static 'scrub_csv/datatables/extensions/TableTools/js/dataTables.tableTools.js' %}"></script>
 <script>
     $(document).ready(function() {
-        $('#csvfile').DataTable();
+        /* Datatables init */
+        $('#csvfile').DataTable({
+            "searching": false,
+            "paging":    false,
+            "ordering":  false,
+            "info":      false,
+            "scrollX":   true
+        });
+
+        /* Column options */
+        $('.select_key, .custom_key').hide()
     } );
 </script>
 {% endblock %}
