@@ -1,70 +1,102 @@
-<h1>Select header fields for {{ document }}</h1>
+{% extends "base.html" %}
 
-{% if not error_message %}
-    <form action="{% url 'files:process' document.id %}" method="post">
-    {% csrf_token %}
-    <p>Showing you the first {{ line_count }} line</p>
-    <p>Now, please select one of the following for each column:</p>
-    <ul>
-    {% if existing_keys_list %}
-        <li>An existing field from the database</li>
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{# Datatables CSS #}
+{% block bootstrap3_extra_head %}
+<link href="{% static 'scrub_csv/datatables/media/css/jquery.dataTables.css' %}" rel="stylesheet">
+<link href="{% static 'scrub_csv/datatables/extensions/Responsive/css/dataTables.responsive.css' %}" rel="stylesheet">
+<link href="{% static 'scrub_csv/datatables/extensions/TableTools/css/dataTables.tableTools.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block title %}
+Select header fields for {{ document }}
+{% endblock %}
+
+{% block content %}
+    {% if not error_message %}
+        <form role="form" action="{% url 'files:process' document.id %}" method="post" {% if layout != 'vertical' %}class="form-{{ layout }}"{% endif %}>
+        {% csrf_token %}
+        <p>Showing you the first {{ line_count }} line(s) of the file.</p>
+        <p>Now, please select one of the following for each column:</p>
+        <ul>
+        {% if existing_keys_list %}
+            <li>An existing field from the database</li>
+        {% endif %}
+            <li>Use the file's header, if available (if not, the column will be ignored)</li>
+            <li>A custom field name</li>
+            <li>Ignore this column (do not import it to the database)</li>
+        </ul>
+
+        <table id="csvfile" class="display responsive" width="100%">
+            <thead>
+                <tr>
+                {% for column in content.0 %}
+                    <th>Column #{{ forloop.counter }}</th>
+                {% endfor %}
+                </tr>
+                <tr>
+                {% for column in content.0 %}
+                    <td>
+                    {% if existing_keys_list %}
+                        <input type="radio" name="choice{{ forloop.counter }}" value="select"> Existing field<br/>
+                        <select name="key{{ forloop.counter}}" id="key{{ forloop.counter}}">
+                            <option value="">Select a field</option>
+                        {% for key in existing_keys_list %}
+                            <option value="{{ key }}">{{ key }}</option>
+                        {% endfor %}
+                        </select>
+                    {% endif %}
+                        <input type="radio" name="choice{{ forloop.counter }}" value="header"> Use header<br/>
+                        <input type="radio" name="choice{{ forloop.counter }}" value="custom"> Enter custom name<br/>
+                        <input type="text" name="custom{{ forloop.counter }}" value=""><br/>
+                        <input type="radio" name="choice{{ forloop.counter }}" value="ignore"> Ignore column
+                    </td>
+                {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in content %}
+                <tr class="row-item{% if forloop.first %} row-first{% endif %}">
+                {% for item in row %}
+                    <td>{{ item }}</td>
+                {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <p>
+            Upon analysis, the first row of the file {% if has_header %}appears{% else %}does not appear{% endif %} to be a header row. (This could be wrong, though.)<br/>
+            Please confirm below:</p>
+        </p>
+        <p>
+            <label for="has_header_row">
+                <input type="checkbox" name="has_header_row" id="has_header_row" value="1" {% if has_header %}checked="checked"{%endif %}>
+                The file does have a header row
+            </label> <span>(Check/uncheck as needed)</span>
+        </p>
+        {% buttons submit="Select headers" reset="Cancel "%}{% endbuttons %}
+        </form>
+    {% else %}
+        <p><strong>{{ error_message }}</strong></p>
     {% endif %}
-        <li>Use the file's header, if available (if not, the column will be ignored)</li>
-        <li>A custom field name</li>
-        <li>Ignore this column (do not import it to the database)</li>
-    </ul>
+    <p><a href="{% url 'files:detail' document.id %}">Go back to file details page.</a></p>
+{% endblock %}
 
-    <table>
-        <thead>
-            <tr>
-            {% for column in content.0 %}
-                <th>Column #{{ forloop.counter }}</th>
-            {% endfor %}
-            </tr>
-            <tr>
-            {% for column in content.0 %}
-                <td>
-                {% if existing_keys_list %}
-                    <input type="radio" name="choice{{ forloop.counter }}" value="select"> Existing field<br/>
-                    <select name="key{{ forloop.counter}}">
-                        <option value="">Select a field</option>
-                    {% for key in existing_keys_list %}
-                        <option value="{{ key }}">{{ key }}</option>
-                    {% endfor %}
-                    </select>
-                {% endif %}
-                    <input type="radio" name="choice{{ forloop.counter }}" value="header"> Use header<br/>
-                    <input type="radio" name="choice{{ forloop.counter }}" value="custom"> Enter custom name<br/>
-                    <input type="text" name="custom{{ forloop.counter }}" value=""><br/>
-                    <input type="radio" name="choice{{ forloop.counter }}" value="ignore"> Ignore column
-                </td>
-            {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-        {% for row in content %}
-            <tr class="row-item{% if forloop.first %} row-first{% endif %}">
-            {% for item in row %}
-                <td>{{ item }}</td>
-            {% endfor %}
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
-    <p>
-        Upon analysis, the first row of the file {% if has_header %}appears{% else %}does not appear{% endif %} to be a header row. (This could be wrong, though.)<br/>
-        Please confirm below:</p>
-    </p>
-    <p>
-        <label for="has_header_row">
-            <input type="checkbox" name="has_header_row" id="has_header_row" value="1" {% if has_header %}checked="checked"{%endif %}>
-            The file does have a header row
-        </label> <span>(Check/uncheck as needed)</span>
-    </p>
-    <input type="submit" value="Select headers" />
-    </form>
-{% else %}
-    <p><strong>{{ error_message }}</strong></p>
-{% endif %}
-<p><a href="{% url 'files:detail' document.id %}">Go back to file details page.</a></p>
+{# Datatables JS #}
+{% block bootstrap3_extra_script %}
+<script src="{% static 'scrub_csv/datatables/media/js/jquery.dataTables.js' %}"></script>
+<script src="{% static 'scrub_csv/datatables/extensions/Responsive/js/dataTables.responsive.js' %}"></script>
+<script src="{% static 'scrub_csv/datatables/extensions/TableTools/js/dataTables.tableTools.js' %}"></script>
+<script>
+    $(document).ready(function() {
+        $('#csvfile').DataTable();
+    } );
+</script>
+{% endblock %}

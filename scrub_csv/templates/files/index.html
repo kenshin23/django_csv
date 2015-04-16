@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Uploaded documents list{% endblock %}
+{% block content %}
 {% if latest_document_list %}
     <ul>
     {% for document in latest_document_list %}
@@ -11,3 +14,4 @@
     You can login to <a href="{% url 'admin:index' %}">the admin area</a> to add files.<br/>
     Username: admin / Password: admin
 </p>
+{% endblock%}

@@ -1,4 +1,8 @@
-<h1>{{ document.csvfile.name }}</h1>
+{% extends "base.html" %}
+{% load bootstrap3 %}
+
+{% block title %}{{ document.csvfile.name }}{% endblock %}
+{% block content %}
 {% if document.record_set.all %}
     <ul>
     {% for record in document.record_set.all %}
@@ -9,3 +13,4 @@
     <p>The document doesn't appear to have been processed yet. <a href="{% url 'files:select_fields' document.id %}">Do it?</a>
 {% endif %}
 <p><a href="{% url 'files:index' %}">Go back to file index page.</a></p>
+{% endblock %}

@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render
 # TODO: Remove HttpResponse after removing method stubs
-from django.http import HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse
+from django.core.urlresolvers import reverse
 # XXX: In case the path to the files is needed in some other way, uncomment:
 # from django.conf import settings
 
@@ -66,5 +67,22 @@ def select_fields(request, document_id):
 
 
 def process(request, document_id):
-    response = "This is step 2 for the document %s processing page."
-    return HttpResponse(response % document_id)
+    p = get_object_or_404(Document, pk=document_id)
+    try:
+        # Get all the column options:
+        for column_number in range(1, request.POST['column']):
+            # Retrieve the selected columns options:
+            if request.POST["" + str(column_number)]:
+                pass
+
+    except (KeyError, Record.DoesNotExist):
+        # Redisplay the question voting form.
+        return render(request, 'views/process.html', {
+            'document': p,
+            'error_message': "You didn't select a choice.",
+        })
+    else:
+        selected_choice.votes += 1
+        new_record.save()
+        return HttpResponseRedirect(
+            reverse('views:records', args=(p.id,)))

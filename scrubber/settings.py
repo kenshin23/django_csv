@@ -37,7 +37,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'scrub_csv'
+    'scrub_csv',
+    'bootstrap3',
 )
 
 MIDDLEWARE_CLASSES = (
