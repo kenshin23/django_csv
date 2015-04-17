@@ -122,36 +122,39 @@ def process(request, document_id):
             records_ok = 0
             records_ignored = 0
             csv_header = list()
+
             with open(d.csvfile.path) as f:
                 csv_f = csv.reader(f)
+
+                # Skip the header row from importing:
+                if has_header_row:
+                    csv_header = csv_f.next()
+
                 for row in csv_f:
-                    if (row_counter == 0 and has_header_row):
-                        csv_header = row
-                        continue
+                    row_counter += 1
+
                     # Create a new Row object and save it:
                     try:
-                        db_row = Row(document=d.id, permanent=permanent)
+                        db_row = Row(document_id=d.id, permanent=permanent)
                         db_row.save()
-                        print "New row created. ID: %d" % db_row.id
                     except Exception as e:
-                        print "Uh-oh, failed to create a new row."
                         raise e
 
                     # Now create and save new Records with current Row id:
-                    for pos in column_positions:
-                        if (column_actions[pos].set_key == "select" or
-                                column_actions[pos].set_key == "custom"):
-                            doc_key = column_actions[pos].value
-                        elif column_actions[pos].set_key == "header":
+                    for pos in [x-1 for x in column_positions]:
+                        if (column_actions[pos]["set_key"] == "select" or
+                                column_actions[pos]["set_key"] == "custom"):
+                            doc_key = column_actions[pos]["value"]
+                        elif column_actions[pos]["set_key"] == "header":
                             doc_key = csv_header[pos]
-                        elif column_actions[pos].set_key == "ignore":
+                        elif column_actions[pos]["set_key"] == "ignore":
                             records_ignored += 1
                             continue
                         else:
                             pass  # for now. Proper error handling is needed.
 
                         try:
-                            db_record = Record(row=db_row.id,
+                            db_record = Record(row_id=db_row.id,
                                                doc_key=doc_key,
                                                doc_value=row[pos])
                             db_record.save()
@@ -159,11 +162,9 @@ def process(request, document_id):
                             raise e
                         else:
                             records_ok += 1
-                    row_counter += 1
                 # endfor
             # endwith
     except Exception as e:
-        print "Oops, got exception..."
         raise e
         # Redisplay the document select form.
 
@@ -172,10 +173,6 @@ def process(request, document_id):
             'error_message': "An exception was raised.",
         })
     else:
-        print "All went well."
-        print "Read %d rows." % row_counter
-        print "Saved records: %d" % records_ok
-        print "Ignored records: %d" % records_ignored
         return HttpResponseRedirect(
             reverse('files:scrub', args=(d.id,)))
 
