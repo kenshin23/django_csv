@@ -25,8 +25,8 @@ class Document(models.Model):
                            self.upload_date.strftime(timeformat))
 
 
-# A document can have many rows (which can be permanent or just
-# to scrub against)...
+# ...A document can have many rows (which can be permanent or just
+# to scrub against, then deleted afterwards)...
 class Row(models.Model):
     document = models.ForeignKey(Document)
     permanent = models.BooleanField(default=True)
