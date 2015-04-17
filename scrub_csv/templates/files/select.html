@@ -20,6 +20,7 @@ Select header fields for {{ document }}
         <legend>File options</legend>
 
         {% csrf_token %}
+        <input type="hidden" name="csv_columns" value="{{ content.0|length }}">
         <!-- File options group -->
         <div class="form-group">
             <label class="col-md-4 control-label" for="action">What would you like to do with this file?</label>
@@ -72,6 +73,7 @@ Select header fields for {{ document }}
                         <!-- Column options -->
                             <div class="form-group">
                                 <div class="col-md-6">
+                                {% if existing_keys_list %}
                                     <div class="radio">
                                         <label for="column_choice_select{{ forloop.counter }}">
                                             <input name="column_choice{{ forloop.counter }}" id="column_choice_select{{ forloop.counter }}" value="select" checked="checked" type="radio">
@@ -84,6 +86,7 @@ Select header fields for {{ document }}
                                         {% endfor %}
                                         </select>
                                     </div>
+                                {% endif %}
                                     <div class="radio">
                                         <label for="column_choice_header{{ forloop.counter }}">
                                             <input name="column_choice{{ forloop.counter }}" id="column_choice_header{{ forloop.counter }}" value="header" type="radio">

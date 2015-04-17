@@ -5,7 +5,8 @@ from django.core.urlresolvers import reverse
 # XXX: In case the path to the files is needed in some other way, uncomment:
 # from django.conf import settings
 
-from .models import Document
+from .models import Document, Row, Record
+import csv
 
 
 def index(request):
@@ -32,7 +33,6 @@ def records(request, document_id):
 
 def select_fields(request, document_id):
     document = get_object_or_404(Document, pk=document_id)
-    import csv
 
     f = open(document.csvfile.path)
     csv_f = ""
@@ -67,22 +67,75 @@ def select_fields(request, document_id):
 
 
 def process(request, document_id):
-    p = get_object_or_404(Document, pk=document_id)
+    d = get_object_or_404(Document, pk=document_id)
     try:
-        # Get all the column options:
-        for column_number in range(1, request.POST['column']):
-            # Retrieve the selected columns options:
-            if request.POST["" + str(column_number)]:
-                pass
+        print(repr(request.POST))
 
-    except (KeyError, Record.DoesNotExist):
-        # Redisplay the question voting form.
-        return render(request, 'views/process.html', {
-            'document': p,
-            'error_message': "You didn't select a choice.",
+        # Get file processing options:
+        action = request.POST.get('action')
+        has_header_row = request.POST.get('has_header_row', False)
+        has_header_row = True if has_header_row else False
+
+        if action == 'import_only':
+            permanent = True
+        else:
+            permanent = False
+
+        # Get all the column options:
+        column_actions = list()
+        for column_number in range(1, int(
+                request.POST.get('csv_columns')) + 1):
+            action = dict()
+            current_col = "column_choice" + str(column_number)
+            current_choice = request.POST[current_col]
+            action["set_key"] = current_choice
+
+            if current_choice == "select":
+                # get key value from post
+                action["value"] = request.POST.get("key" + str(column_number))
+            elif current_choice == "header":
+                if has_header_row:
+                    action["value"] = ""
+                else:
+                    action["set_key"] = "ignore"
+                    action["value"] = False
+            elif current_choice == "custom":
+                action["value"] = request.POST[
+                    "custom_key" + str(column_number)]
+            elif current_choice == "ignore":
+                action["value"] = False
+            else:
+                raise ValueError("An incorrect option was passed.")
+            column_actions.append(action)
+
+        # # Open and process CSV file:
+        # f = open(d.csvfile.path)
+        # with csv.reader(f) as csv_f:
+        #     for row in csv_f:
+        #         # Create a new row object and save it:
+        #         try:
+        #             db_row = Row(document=d.id, permanent=permanent)
+        #             db_row.save()
+        #         except Exception as e:
+        #             raise e
+
+    except Exception as e:
+        raise e
+        # Redisplay the document select form.
+
+        return render(request, 'files/select.html', {
+            'document': d,
+            'error_message': "An exception was raised.",
         })
     else:
-        selected_choice.votes += 1
-        new_record.save()
         return HttpResponseRedirect(
-            reverse('views:records', args=(p.id,)))
+            reverse('files:scrub', args=(d.id,)))
+
+
+def scrub(request, document_id):
+    # What this method does is:
+    # * Get the results of the import, whether temporary or permanent
+    # * Based on user selection, create the CSV file or not, and change
+    #   all of the records to permanent true or not.
+    response = "You're looking at the last stage of file scrubber for doc %s."
+    return HttpResponse(response % document_id)

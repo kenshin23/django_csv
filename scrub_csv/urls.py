@@ -19,9 +19,15 @@ urlpatterns = [
     url(r'^(?P<document_id>[0-9]+)/select/$',
         views.select_fields, name='select_fields'),
 
-    # ex: /files/5/process/ -- This actually processes the file
+    # ex: /files/5/process/ -- This processes the file and imports
+    # the records to the database
     url(r'^(?P<document_id>[0-9]+)/process/$',
         views.process, name='process'),
+
+    # ex: /files/5/scrub/ -- This returns the scrubbing result for 
+    # the uploaded file, cleaning up if necessary.
+    url(r'^(?P<document_id>[0-9]+)/scrub/$',
+        views.scrub, name='scrub'),
 
     # ex: /files/5/records/ -- This shows the processing result
     url(r'^(?P<document_id>[0-9]+)/records/$',
