@@ -55,6 +55,8 @@ def select_fields(request, document_id):
             line_count = len(content)
         else:
             line_count = get_lines
+    finally:
+        f.close()
 
     context = {
         'document': document,
@@ -69,12 +71,11 @@ def select_fields(request, document_id):
 def process(request, document_id):
     d = get_object_or_404(Document, pk=document_id)
     try:
-        print(repr(request.POST))
-
         # Get file processing options:
         action = request.POST.get('action')
         has_header_row = request.POST.get('has_header_row', False)
         has_header_row = True if has_header_row else False
+        errors = list()
 
         if action == 'import_only':
             permanent = True
@@ -83,8 +84,10 @@ def process(request, document_id):
 
         # Get all the column options:
         column_actions = list()
-        for column_number in range(1, int(
-                request.POST.get('csv_columns')) + 1):
+        ignored_columns = 0
+        total_columns = int(request.POST.get('csv_columns'))
+        column_positions = range(1, total_columns + 1)
+        for column_number in column_positions:
             action = dict()
             current_col = "column_choice" + str(column_number)
             current_choice = request.POST[current_col]
@@ -99,27 +102,68 @@ def process(request, document_id):
                 else:
                     action["set_key"] = "ignore"
                     action["value"] = False
+                    ignored_columns += 1
             elif current_choice == "custom":
-                action["value"] = request.POST[
-                    "custom_key" + str(column_number)]
+                action["value"] = request.POST.get(
+                    "custom_key" + str(column_number))
             elif current_choice == "ignore":
                 action["value"] = False
             else:
                 raise ValueError("An incorrect option was passed.")
             column_actions.append(action)
 
-        # # Open and process CSV file:
-        # f = open(d.csvfile.path)
-        # with csv.reader(f) as csv_f:
-        #     for row in csv_f:
-        #         # Create a new row object and save it:
-        #         try:
-        #             db_row = Row(document=d.id, permanent=permanent)
-        #             db_row.save()
-        #         except Exception as e:
-        #             raise e
+        if ignored_columns >= total_columns:
+            # Houston, we have a problem.
+            err_text = "Cannot import the file, all columns are set to ignore."
+            errors.append(err_text)
+        else:
+            # Open and process CSV file:
+            row_counter = 0
+            records_ok = 0
+            records_ignored = 0
+            csv_header = list()
+            with open(d.csvfile.path) as f:
+                csv_f = csv.reader(f)
+                for row in csv_f:
+                    if (row_counter == 0 and has_header_row):
+                        csv_header = row
+                        continue
+                    # Create a new Row object and save it:
+                    try:
+                        db_row = Row(document=d.id, permanent=permanent)
+                        db_row.save()
+                        print "New row created. ID: %d" % db_row.id
+                    except Exception as e:
+                        print "Uh-oh, failed to create a new row."
+                        raise e
 
+                    # Now create and save new Records with current Row id:
+                    for pos in column_positions:
+                        if (column_actions[pos].set_key == "select" or
+                                column_actions[pos].set_key == "custom"):
+                            doc_key = column_actions[pos].value
+                        elif column_actions[pos].set_key == "header":
+                            doc_key = csv_header[pos]
+                        elif column_actions[pos].set_key == "ignore":
+                            records_ignored += 1
+                            continue
+                        else:
+                            pass  # for now. Proper error handling is needed.
+
+                        try:
+                            db_record = Record(row=db_row.id,
+                                               doc_key=doc_key,
+                                               doc_value=row[pos])
+                            db_record.save()
+                        except Exception as e:
+                            raise e
+                        else:
+                            records_ok += 1
+                    row_counter += 1
+                # endfor
+            # endwith
     except Exception as e:
+        print "Oops, got exception..."
         raise e
         # Redisplay the document select form.
 
@@ -128,6 +172,10 @@ def process(request, document_id):
             'error_message': "An exception was raised.",
         })
     else:
+        print "All went well."
+        print "Read %d rows." % row_counter
+        print "Saved records: %d" % records_ok
+        print "Ignored records: %d" % records_ignored
         return HttpResponseRedirect(
             reverse('files:scrub', args=(d.id,)))
 
