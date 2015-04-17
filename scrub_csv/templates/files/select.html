@@ -78,7 +78,10 @@ Select header fields for {{ document }}
                                             Existing key
                                         </label>
                                         <select id="existing_key{{ forloop.counter }}" name="key{{ forloop.counter }}" class="form-control">
-                                            <option value="">Option one</option>
+                                            <option value="">Select a field</option>
+                                        {% for key in existing_keys_list %}
+                                            <option value="{{ key }}">{{ key }}</option>
+                                        {% endfor %}
                                         </select>
                                     </div>
                                     <div class="radio">
