@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{% block title %}
+Select header fields for {{ document }}
+{% endblock %}
+
+{% block content %}
+    {% if not error_message %}
+    <div class="row">
+        <form role="form" class="form-horizontal" action="{% url 'files:process' document.id %}" method="post">
+        <fieldset>
+        <!-- Form Name -->
+        <legend>File options</legend>
+
+        {% csrf_token %}
+        <input type="hidden" name="csv_columns" value="{{ content.0|length }}">
+        <!-- File options group -->
+        <div class="form-group">
+            <label class="col-md-4 control-label" for="action">What would you like to do with this file?</label>
+            <div class="col-md-8">
+                <div class="radio">
+                    <label for="action_scrub_save">
+                        <input name="action" id="action_scrub_save" value="scrub_save" checked="checked" type="radio">
+                        Scrub against database, save records for future use.
+                    </label>
+                </div>
+                <div class="radio">
+                    <label for="action_scrub_only">
+                        <input name="action" id="action_scrub_only" value="scrub_only" type="radio">
+                        Scrub against database, discard records.
+                  </label>
+                </div>
+                <div class="radio">
+                    <label for="action_import_only">
+                        <input name="action" id="action_import_only" value="import_only" type="radio">
+                        Do not return a scrubbed file, just import the records to the database.
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="file-details">
+            <p>Showing you the first {{ line_count }} line(s) of the file.</p>
+            <p>Now, please select one of the following for each column:</p>
+            <ul>
+            {% if existing_keys_list %}
+                <li>An existing field from the database</li>
+            {% endif %}
+                <li>Use the file's header, if available (if not, the column will be ignored)</li>
+                <li>A custom field name</li>
+                <li>Ignore this column (do not import it to the database)</li>
+            </ul>
+        </div>
+
+        <div class="file-table table-responsive">
+            <table id="csvfile" class="table table-bordered">
+                <thead>
+                    <tr>
+                    {% for column in content.0 %}
+                        <th>Column #{{ forloop.counter }} Key</th>
+                    {% endfor %}
+                    </tr>
+                    <tr>
+                    {% for column in content.0 %}
+                        <td>
+                        <!-- Column options -->
+                            <div class="form-group">
+                                <div class="col-md-6">
+                                {% if existing_keys_list %}
+                                    <div class="radio">
+                                        <label for="column_choice_select{{ forloop.counter }}">
+                                            <input name="column_choice{{ forloop.counter }}" id="column_choice_select{{ forloop.counter }}" value="select" checked="checked" type="radio">
+                                            Existing key
+                                        </label>
+                                        <select id="existing_key{{ forloop.counter }}" name="key{{ forloop.counter }}" class="form-control">
+                                            <option value="">Select a field</option>
+                                        {% for key in existing_keys_list %}
+                                            <option value="{{ key }}">{{ key }}</option>
+                                        {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+                                    <div class="radio">
+                                        <label for="column_choice_header{{ forloop.counter }}">
+                                            <input name="column_choice{{ forloop.counter }}" id="column_choice_header{{ forloop.counter }}" value="header" type="radio">
+                                            Use header as key
+                                        </label>
+                                    </div>
+                                    <div class="radio">
+                                        <label for="column_choice_custom{{ forloop.counter }}">
+                                            <span class="input-group-addon">     
+                                                <input name="column_choice{{ forloop.counter }}" id="column_choice_custom{{ forloop.counter }}" value="custom" type="radio">     
+                                            </span>
+                                        </label>
+                                        <input id="custom_key{{ forloop.counter }}" name="custom_key{{ forloop.counter }}" class="form-control" placeholder="Enter custom name" type="text">
+                                    </div>
+                                    <div class="radio">
+                                        <label for="column_choice_ignore{{ forloop.counter }}">
+                                            <input name="column_choice{{ forloop.counter }}" id="column_choice_ignore{{ forloop.counter }}" value="ignore" type="radio">
+                                            Ignore column (do not import)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in content %}
+                    <tr{% if forloop.first %} class="info"{% endif %}>
+                    {% for item in row %}
+                        <td>{{ item }}</td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="file-analysis">
+            <p>
+                Upon analysis, the first row of the file (highlighted in blue) {% if has_header %}appears{% else %}does not appear{% endif %} to be a header row. (This could be wrong, though.)<br/>
+                Please confirm below:
+            </p>
+
+            <div class="form-group">
+                <label class="col-md-4 control-label" for="has_header_row">The file does have a header row</label>
+                <div class="col-md-8">
+                    <div class="checkbox">
+                        <label for="has_header_row">
+                            <input name="has_header_row" id="has_header_row" value="1" type="checkbox"{% if has_header %} checked="checked"{% endif %}>
+                            (Check/uncheck as needed)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% buttons submit="Process file" reset="Cancel "%}{% endbuttons %}
+        </fieldset>
+        </form>
+    </div><!--/.row-->
+    {% else %}
+    <div class="row">
+        <p><strong>{{ error_message }}</strong></p>
+    </div>
+    {% endif %}
+    <p><a href="{% url 'files:detail' document.id %}">Go back to file details page.</a></p>
+{% endblock %}
+
+{# Datatables JS #}
+{% block bootstrap3_extra_script %}
+<script>
+    $(document).ready(function() {
+        /* Column options */
+        $('.select_key, .custom_key').hide()
+    } );
+</script>
+{% endblock %}

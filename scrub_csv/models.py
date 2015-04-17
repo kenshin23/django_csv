@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+# A user is an uploader as well.
 class Uploader(models.Model):
     user = models.OneToOneField(User)
     is_active = models.BooleanField(default=True)
@@ -10,6 +11,7 @@ class Uploader(models.Model):
         return self.user.username
 
 
+# A user can upload many documents...
 class Document(models.Model):
     uploader = models.ForeignKey(Uploader)
     csvfile = models.FileField(upload_to='uploads/%Y/%m/%d',
@@ -23,9 +25,16 @@ class Document(models.Model):
                            self.upload_date.strftime(timeformat))
 
 
-class Record(models.Model):
+# ...A document can have many rows (which can be permanent or just
+# to scrub against, then deleted afterwards)...
+class Row(models.Model):
     document = models.ForeignKey(Document)
-    row = models.PositiveIntegerField()
+    permanent = models.BooleanField(default=True)
+
+
+# ...and a row can have many records (key:value)
+class Record(models.Model):
+    row = models.ForeignKey(Row)
     doc_key = models.CharField(max_length=200)
     doc_value = models.CharField(max_length=200, default="")
 
