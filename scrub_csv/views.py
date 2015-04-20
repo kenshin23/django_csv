@@ -170,7 +170,7 @@ def process(request, document_id):
                                     doc_value = functions.string_to_md5(
                                         row[pos])
                                     db_record = Record(row_id=db_row.id,
-                                                       doc_key=doc_key,
+                                                       doc_key="email_md5",
                                                        doc_value=doc_value)
                                     db_record.save()
                                     records_ok += 1
@@ -187,7 +187,6 @@ def process(request, document_id):
                                                doc_key=doc_key,
                                                doc_value=row[pos])
                             db_record.save()
-
                         except Exception as e:
                             raise e
                         else:
@@ -222,49 +221,66 @@ def scrub(request, document_id, action):
 
     # Scrub the file against the database:
     if action == "scrub_save" or action == "scrub_only":
-        exist_rec_email = Record.objects.filter(row__permanent=False,
-                                                doc_key="email")
-        exist_rec_md5 = Record.objects.filter(row__permanent=False,
-                                              doc_key="email_md5")
-        existing_records = exist_rec_email | exist_rec_md5
-        temp_rec_email = Record.objects.filter(document_id=document.id,
-                                               row__permanent=True,
+        # Get the freshly imported records first (while making sure that
+        # they have an 'email'/'email_md5' column -- otherwise, this will
+        # turn out empty):
+        temp_rec_email = Record.objects.filter(row__document_id=document.id,
+                                               row__permanent=False,
                                                doc_key="email")
-        temp_rec_md5 = Record.objects.filter(document_id=document.id,
-                                             row__permanent=True,
+        temp_rec_md5 = Record.objects.filter(row__document_id=document.id,
+                                             row__permanent=False,
                                              doc_key="email_md5")
         temp_records = temp_rec_email | temp_rec_md5
+
+        print "Representation of temp records:"
+        print(repr(temp_records))
+
+        # ---------------------------------------------------------------------
+
+        exist_rec_email = Record.objects.filter(row__permanent=True,
+                                                doc_key="email")
+        exist_rec_md5 = Record.objects.filter(row__permanent=True,
+                                              doc_key="email_md5")
+        existing_records = exist_rec_email | exist_rec_md5
+
+        print "Representation of existing records:"
+        print(repr(existing_records))
 
         found_rows = Row.objects.filter(
             record=(existing_records & temp_records))
         not_found_rows = Row.objects.filter(
             record=(temp_records))
 
-        print("Found %d rows matching the search." % len(found_rows))
-        print("Skipped %d rows not matching the search." % len(not_found_rows))
+        print("Found {} rows matching the search.".format(len(found_rows)))
+        print("Skipped {} rows not matching the search.".format(
+            len(not_found_rows)))
 
+        if (len(existing_records) == 0 and "scrub_" in action):
+            messages.error(request, "No records found to scrub against.")
+            return render(request, 'files/detail.html', {'document': document})
+
+        # Now save or discard records:
+        # NOTE: If records already exist, do not duplicate them in the
+        # database, i.e.: only save the records that weren't found.
+        if action == "scrub_save":
+            updated = 0
+            updated = not_found_rows.update(permanent=True)
+            messages.success(request,
+                             "Imported {} row(s) to the database.".format(
+                                len(updated)))
+        elif action == "scrub_only":
+            deleted = 0
+            # Now cleanup after the import:
+            deleted = Row.objects.filter(permanent=False).delete()
+            messages.success(request,
+                             "Scrubbed {} row(s) from the database".format(
+                                len(deleted)))
+        else:
+            pass
     elif action == "import_only":
         pass
     else:
         messages.error(request, "The selected action is not available.")
 
-    if (len(existing_records) == 0 and "scrub_" in action):
-        messages.error(request, "No records found to scrub against.")
-        return render(request, 'files/detail.html', {'document': document})
-
-    updated = 0
-    deleted = 0
-    # Now save or discard records:
-    # NOTE: If records already exist, do not duplicate them in the database,
-    # i.e.: only save the records that weren't found.
-    if action == "scrub_save" or action == "import_only":
-        updated = not_found_rows.update(permanent=True)
-        messages.success(request,
-                         "Imported %d row(s) to the database." % updated)
-
-    # Now cleanup after the import:
-    deleted = Row.objects.filter(permanent=False).delete()
-    messages.success(request,
-                     "Scrubbed %d row(s) from the database" % deleted)
 
     return render(request, 'files/scrub.html', {'document': document})
