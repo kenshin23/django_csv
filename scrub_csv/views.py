@@ -1,9 +1,12 @@
-from django.shortcuts import get_object_or_404, render
 # TODO: Remove HttpResponse after removing method stubs
 from django.http import HttpResponseRedirect, HttpResponse
-from django.core.urlresolvers import reverse
 # XXX: In case the path to the files is needed in some other way, uncomment:
 # from django.conf import settings
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, render
+from django.core.urlresolvers import reverse
+
+import functions
 
 from .models import Document, Row, Record
 import csv
@@ -72,12 +75,12 @@ def process(request, document_id):
     d = get_object_or_404(Document, pk=document_id)
     try:
         # Get file processing options:
-        action = request.POST.get('action')
+        perform_action = request.POST.get('action')
         has_header_row = request.POST.get('has_header_row', False)
         has_header_row = True if has_header_row else False
         errors = list()
 
-        if action == 'import_only':
+        if perform_action == 'import_only':
             permanent = True
         else:
             permanent = False
@@ -141,23 +144,50 @@ def process(request, document_id):
                         raise e
 
                     # Now create and save new Records with current Row id:
-                    for pos in [x-1 for x in column_positions]:
+                    for pos in [x - 1 for x in column_positions]:
                         if (column_actions[pos]["set_key"] == "select" or
                                 column_actions[pos]["set_key"] == "custom"):
-                            doc_key = column_actions[pos]["value"]
+                            temp_key = column_actions[pos]["value"]
                         elif column_actions[pos]["set_key"] == "header":
-                            doc_key = csv_header[pos]
+                            temp_key = csv_header[pos]
                         elif column_actions[pos]["set_key"] == "ignore":
                             records_ignored += 1
                             continue
                         else:
                             pass  # for now. Proper error handling is needed.
 
+                        temp_key = functions.clean_key(temp_key)
+                        doc_key = functions.validate_key(temp_key)
+
                         try:
+                            # If the record to be saved represents an e-mail
+                            # (but is not mistakenly selected as email_md5)
+                            # also save it encoded as md5:
+                            if doc_key == "email":
+                                if (functions.is_email(row[pos]) and not
+                                        functions.is_md5(row[pos])):
+                                    # Save the additional record:
+                                    doc_value = functions.string_to_md5(
+                                        row[pos])
+                                    db_record = Record(row_id=db_row.id,
+                                                       doc_key=doc_key,
+                                                       doc_value=doc_value)
+                                    db_record.save()
+                                    records_ok += 1
+                                elif functions.is_md5(row[pos]):
+                                    # Proceed with normal save after correcting
+                                    # wrong selection:
+                                    doc_key = "email_md5"
+                                else:
+                                    # The value is not md5, but is not a valid
+                                    # e-mail address either.
+                                    pass
+
                             db_record = Record(row_id=db_row.id,
                                                doc_key=doc_key,
                                                doc_value=row[pos])
                             db_record.save()
+
                         except Exception as e:
                             raise e
                         else:
@@ -173,14 +203,68 @@ def process(request, document_id):
             'error_message': "An exception was raised.",
         })
     else:
+        response_kwargs = {
+            'document_id': d.id,
+            'action': perform_action,
+        }
+        messages.success(request, "Correct records: %d" % records_ok)
+        messages.success(request, "Ignored records: %d" % records_ignored)
         return HttpResponseRedirect(
-            reverse('files:scrub', args=(d.id,)))
+            reverse('files:scrub', kwargs=response_kwargs))
 
 
-def scrub(request, document_id):
+def scrub(request, document_id, action):
     # What this method does is:
     # * Get the results of the import, whether temporary or permanent
     # * Based on user selection, create the CSV file or not, and change
     #   all of the records to permanent true or not.
-    response = "You're looking at the last stage of file scrubber for doc %s."
-    return HttpResponse(response % document_id)
+    document = get_object_or_404(Document, pk=document_id)
+
+    # Scrub the file against the database:
+    if action == "scrub_save" or action == "scrub_only":
+        exist_rec_email = Record.objects.filter(row__permanent=False,
+                                                doc_key="email")
+        exist_rec_md5 = Record.objects.filter(row__permanent=False,
+                                              doc_key="email_md5")
+        existing_records = exist_rec_email | exist_rec_md5
+        temp_rec_email = Record.objects.filter(document_id=document.id,
+                                               row__permanent=True,
+                                               doc_key="email")
+        temp_rec_md5 = Record.objects.filter(document_id=document.id,
+                                             row__permanent=True,
+                                             doc_key="email_md5")
+        temp_records = temp_rec_email | temp_rec_md5
+
+        found_rows = Row.objects.filter(
+            record=(existing_records & temp_records))
+        not_found_rows = Row.objects.filter(
+            record=(temp_records))
+
+        print("Found %d rows matching the search." % len(found_rows))
+        print("Skipped %d rows not matching the search." % len(not_found_rows))
+
+    elif action == "import_only":
+        pass
+    else:
+        messages.error(request, "The selected action is not available.")
+
+    if (len(existing_records) == 0 and "scrub_" in action):
+        messages.error(request, "No records found to scrub against.")
+        return render(request, 'files/detail.html', {'document': document})
+
+    updated = 0
+    deleted = 0
+    # Now save or discard records:
+    # NOTE: If records already exist, do not duplicate them in the database,
+    # i.e.: only save the records that weren't found.
+    if action == "scrub_save" or action == "import_only":
+        updated = not_found_rows.update(permanent=True)
+        messages.success(request,
+                         "Imported %d row(s) to the database." % updated)
+
+    # Now cleanup after the import:
+    deleted = Row.objects.filter(permanent=False).delete()
+    messages.success(request,
+                     "Scrubbed %d row(s) from the database" % deleted)
+
+    return render(request, 'files/scrub.html', {'document': document})

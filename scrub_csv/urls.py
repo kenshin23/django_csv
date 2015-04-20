@@ -24,9 +24,9 @@ urlpatterns = [
     url(r'^(?P<document_id>[0-9]+)/process/$',
         views.process, name='process'),
 
-    # ex: /files/5/scrub/ -- This returns the scrubbing result for 
+    # ex: /files/5/scrub/ -- This returns the scrubbing result for
     # the uploaded file, cleaning up if necessary.
-    url(r'^(?P<document_id>[0-9]+)/scrub/$',
+    url(r'^(?P<document_id>[0-9]+)/scrub/(?P<action>\w+)/$',
         views.scrub, name='scrub'),
 
     # ex: /files/5/records/ -- This shows the processing result
