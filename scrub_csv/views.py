@@ -245,7 +245,22 @@ def scrub(request, document_id, action):
             record=intersection).distinct()
 
         # Convert the found rows into CSV format:
-        # TODO
+        found_csv = list()
+        found_csv_header = list()
+        for row in found_rows:
+            aux_row_dict = dict()
+            record_list = row.record_set.all()
+            for record in record_list:
+                found_csv_header.append(record.doc_key)
+                aux_row_dict[record.doc_key] = record.doc_value
+            found_csv.append(aux_row_dict)
+        print repr(found_csv_header)
+        print repr(found_csv)
+
+        with open('temp_found.csv', 'wb') as f:
+            w = csv.DictWriter(f, found_csv_header)
+            w.writeheader()
+            w.writerows(found_csv)
 
         if (len(existing_records) == 0 and "scrub_" in action):
             messages.error(request, "No records found to scrub against.")
