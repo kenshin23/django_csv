@@ -5,7 +5,9 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
+from django.core.files import File
 from django.core.urlresolvers import reverse
+
 
 import functions
 
@@ -229,10 +231,16 @@ def scrub(request, document_id, action):
                                              row__permanent=False).\
             filter(Q(doc_key="email") | Q(doc_key="email_md5"))
 
+        print "temp_records:"
+        print temp_records
+
         # ---------------------------------------------------------------------
 
         existing_records = Record.objects.filter(row__permanent=True).\
             filter(Q(doc_key="email") | Q(doc_key="email_md5"))
+
+        print "existing_records:"
+        print existing_records
 
         # ---------------------------------------------------------------------
 
@@ -240,29 +248,30 @@ def scrub(request, document_id, action):
             doc_value__in=list(existing_records.values_list(
                 "doc_value", flat=True)))
 
+        print "intersection:"
+        print intersection
+
         found_rows = Row.objects.filter(record=intersection).distinct()
         not_found_rows = Row.objects.filter(record=temp_records).exclude(
             record=intersection).distinct()
 
+        print "found_rows:"
+        print found_rows
+        print "not_found_rows:"
+        print not_found_rows
+
+        import json
         # Convert the found rows into CSV format:
-        found_csv = list()
-        found_csv_header = list()
-        for row in found_rows:
-            aux_row_dict = dict()
-            record_list = row.record_set.all()
-            for record in record_list:
-                found_csv_header.append(record.doc_key)
-                aux_row_dict[record.doc_key] = record.doc_value
-            found_csv.append(aux_row_dict)
-        print repr(found_csv_header)
-        print repr(found_csv)
+        found_content = convert_to_csv(found_rows,
+                                       'temp_found.csv')
+        print json.dumps(found_content, sort_keys=True,
+                         indent=4, separators=(',', ': '))
+        not_found_content = convert_to_csv(not_found_rows,
+                                           'temp_not_found.csv')
+        print json.dumps(not_found_content, sort_keys=True,
+                         indent=4, separators=(',', ': '))
 
-        with open('temp_found.csv', 'wb') as f:
-            w = csv.DictWriter(f, found_csv_header)
-            w.writeheader()
-            w.writerows(found_csv)
-
-        if (len(existing_records) == 0 and "scrub_" in action):
+        if (not existing_records and "scrub_" in action):
             messages.error(request, "No records found to scrub against.")
             return render(request, 'files/detail.html', {'document': document})
 
@@ -290,3 +299,34 @@ def scrub(request, document_id, action):
         messages.error(request, "The selected action is not available.")
 
     return render(request, 'files/scrub.html', {'document': document})
+
+
+def convert_to_csv(row_queryset, filename):
+    csv_header = list()
+    csv_content = list()
+
+    # print "Row queryset:"
+    # print row_queryset
+
+    for row in row_queryset:
+        aux_row_dict = dict()
+        record_list = row.record_set.all()
+        for record in record_list:
+            csv_header.append(record.doc_key)
+            aux_row_dict[record.doc_key] = record.doc_value
+        csv_content.append(aux_row_dict)
+
+    # print "csv_header:"
+    # print repr(csv_header)
+
+    # print "csv_content:"
+    # print repr(csv_content)
+
+    with open(filename, 'wb') as f:
+        df = File(f)
+        fullpath = df.name
+        w = csv.DictWriter(df, csv_header)
+        w.writeheader()
+        w.writerows(csv_content)
+
+    return csv_content
