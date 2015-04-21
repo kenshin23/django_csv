@@ -353,5 +353,19 @@ def convert_to_csv(row_queryset, filename):
     return csv_content
 
 
-def download_file(fullpath):
-    pass
+def download(request, uploader_id, document_id, file_type):
+    document = get_object_or_404(Document, pk=document_id)
+
+    if file_type == "found_file":
+        csv_file = document.found_file
+        filename = "foundrecords.csv"
+    elif file_type == "not_found_file":
+        csv_file = document.not_found_file
+        filename = "missingrecords.csv"
+    else:
+        pass  # error, actually.
+
+    response = HttpResponse(csv_file, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename=' + filename
+
+    return response

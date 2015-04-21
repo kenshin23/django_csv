@@ -23,10 +23,10 @@
             You can download the resulting scrub files below:
         </p>
         <p>
-            <a href="#">Records found in database</a>
+            <a href="{% url 'files:download' uploader_id document.id "found_file" %}">Records found in database</a>
         </p>
         <p>
-            <a href="#">Records not found in database</a>
+            <a href="{% url 'files:download' uploader_id document.id "not_found_file" %}">Records missing from database</a>
         </p>
         {% endifequal %}
     </div>

@@ -16,6 +16,12 @@ class Document(models.Model):
     uploader = models.ForeignKey(Uploader)
     csvfile = models.FileField(upload_to='uploads/%Y/%m/%d',
                                verbose_name='file')
+    found_file = models.FileField(upload_to='uploads/%Y/%m/%d',
+                                  verbose_name='found records',
+                                  blank=True, null=True)
+    not_found_file = models.FileField(upload_to='uploads/%Y/%m/%d',
+                                      verbose_name='not found records',
+                                      blank=True, null=True)
     upload_date = models.DateTimeField(auto_now_add=True,
                                        verbose_name="date uploaded")
 
