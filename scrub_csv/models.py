@@ -31,6 +31,9 @@ class Row(models.Model):
     document = models.ForeignKey(Document)
     permanent = models.BooleanField(default=True)
 
+    def __unicode__(self):
+        return str(self.document.id) + ": " + str(self.id)
+
 
 # ...and a row can have many records (key:value)
 class Record(models.Model):
