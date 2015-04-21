@@ -76,7 +76,7 @@ Select header fields for {{ document }}
                                 {% if existing_keys_list %}
                                     <div class="radio">
                                         <label for="column_choice_select{{ forloop.counter }}">
-                                            <input name="column_choice{{ forloop.counter }}" id="column_choice_select{{ forloop.counter }}" value="select" checked="checked" type="radio">
+                                            <input name="column_choice{{ forloop.counter }}" id="column_choice_select{{ forloop.counter }}" type="radio" value="select">
                                             Existing key
                                         </label>
                                         <select id="existing_key{{ forloop.counter }}" name="key{{ forloop.counter }}" class="form-control">
@@ -89,7 +89,7 @@ Select header fields for {{ document }}
                                 {% endif %}
                                     <div class="radio">
                                         <label for="column_choice_header{{ forloop.counter }}">
-                                            <input name="column_choice{{ forloop.counter }}" id="column_choice_header{{ forloop.counter }}" value="header" type="radio">
+                                            <input name="column_choice{{ forloop.counter }}" id="column_choice_header{{ forloop.counter }}" value="header" type="radio" checked="checked" >
                                             Use header as key
                                         </label>
                                     </div>

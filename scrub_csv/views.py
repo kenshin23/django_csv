@@ -3,6 +3,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 # XXX: In case the path to the files is needed in some other way, uncomment:
 # from django.conf import settings
 from django.contrib import messages
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.core.urlresolvers import reverse
 
@@ -224,36 +225,27 @@ def scrub(request, document_id, action):
         # Get the freshly imported records first (while making sure that
         # they have an 'email'/'email_md5' column -- otherwise, this will
         # turn out empty):
-        temp_rec_email = Record.objects.filter(row__document_id=document.id,
-                                               row__permanent=False,
-                                               doc_key="email")
-        temp_rec_md5 = Record.objects.filter(row__document_id=document.id,
-                                             row__permanent=False,
-                                             doc_key="email_md5")
-        temp_records = temp_rec_email | temp_rec_md5
+        temp_records = Record.objects.filter(row__document_id=document.id,
+                                             row__permanent=False).\
+            filter(Q(doc_key="email") | Q(doc_key="email_md5"))
 
-        print "Representation of temp records:"
+        print "Temp records:"
         print(repr(temp_records))
 
         # ---------------------------------------------------------------------
 
-        exist_rec_email = Record.objects.filter(row__permanent=True,
-                                                doc_key="email")
-        exist_rec_md5 = Record.objects.filter(row__permanent=True,
-                                              doc_key="email_md5")
-        existing_records = exist_rec_email | exist_rec_md5
+        existing_records = Record.objects.filter(row__permanent=True).\
+            filter(Q(doc_key="email") | Q(doc_key="email_md5"))
 
-        print "Representation of existing records:"
-        print(repr(existing_records))
+        # ---------------------------------------------------------------------
 
-        found_rows = Row.objects.filter(
-            record=(existing_records & temp_records))
-        not_found_rows = Row.objects.filter(
-            record=(temp_records))
+        intersection = temp_records.filter(
+            doc_value__in=list(existing_records.values_list(
+                "doc_value", flat=True)))
 
-        print("Found {} rows matching the search.".format(len(found_rows)))
-        print("Skipped {} rows not matching the search.".format(
-            len(not_found_rows)))
+        found_rows = Row.objects.filter(record=intersection).distinct()
+        not_found_rows = Row.objects.filter(record=temp_records).exclude(
+            record=intersection).distinct()
 
         if (len(existing_records) == 0 and "scrub_" in action):
             messages.error(request, "No records found to scrub against.")
@@ -267,20 +259,19 @@ def scrub(request, document_id, action):
             updated = not_found_rows.update(permanent=True)
             messages.success(request,
                              "Imported {} row(s) to the database.".format(
-                                len(updated)))
+                                 len(updated)))
         elif action == "scrub_only":
             deleted = 0
             # Now cleanup after the import:
             deleted = Row.objects.filter(permanent=False).delete()
             messages.success(request,
                              "Scrubbed {} row(s) from the database".format(
-                                len(deleted)))
+                                 len(deleted)))
         else:
             pass
     elif action == "import_only":
         pass
     else:
         messages.error(request, "The selected action is not available.")
-
 
     return render(request, 'files/scrub.html', {'document': document})
