@@ -14,7 +14,7 @@ Select header fields for {{ document }}
 {% block content %}
     {% if not error_message %}
     <div class="row">
-        <form role="form" class="form-horizontal" action="{% url 'files:process' document.id %}" method="post">
+        <form role="form" class="form-horizontal" action="{% url 'files:process' uploader_id document.id %}" method="post">
         <fieldset>
         <!-- Form Name -->
         <legend>File options</legend>
@@ -152,7 +152,7 @@ Select header fields for {{ document }}
         <p><strong>{{ error_message }}</strong></p>
     </div>
     {% endif %}
-    <p><a href="{% url 'files:detail' document.id %}">Go back to file details page.</a></p>
+    <p><a href="{% url 'files:detail' uploader_id document.id %}">Go back to file details page.</a></p>
 {% endblock %}
 
 {# Datatables JS #}

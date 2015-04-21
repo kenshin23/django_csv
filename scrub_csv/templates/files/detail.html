@@ -10,7 +10,7 @@
     {% endfor %}
     </ul>
 {% else %}
-    <p>The document doesn't appear to have been processed yet. <a href="{% url 'files:select_fields' document.id %}">Do it?</a>
+    <p>The document doesn't appear to have been processed yet. <a href="{% url 'files:select_fields' uploader_id document.id %}">Do it?</a>
 {% endif %}
-<p><a href="{% url 'files:index' %}">Go back to file index page.</a></p>
+<p><a href="{% url 'files:index' uploader_id %}">Go back to file index page.</a></p>
 {% endblock %}
