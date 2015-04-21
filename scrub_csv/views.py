@@ -229,9 +229,6 @@ def scrub(request, document_id, action):
                                              row__permanent=False).\
             filter(Q(doc_key="email") | Q(doc_key="email_md5"))
 
-        print "Temp records:"
-        print(repr(temp_records))
-
         # ---------------------------------------------------------------------
 
         existing_records = Record.objects.filter(row__permanent=True).\
@@ -247,6 +244,9 @@ def scrub(request, document_id, action):
         not_found_rows = Row.objects.filter(record=temp_records).exclude(
             record=intersection).distinct()
 
+        # Convert the found rows into CSV format:
+        # TODO
+
         if (len(existing_records) == 0 and "scrub_" in action):
             messages.error(request, "No records found to scrub against.")
             return render(request, 'files/detail.html', {'document': document})
@@ -261,12 +261,12 @@ def scrub(request, document_id, action):
                              "Imported {} row(s) to the database.".format(
                                  len(updated)))
         elif action == "scrub_only":
-            deleted = 0
             # Now cleanup after the import:
-            deleted = Row.objects.filter(permanent=False).delete()
+            to_delete = Row.objects.filter(permanent=False)
             messages.success(request,
                              "Scrubbed {} row(s) from the database".format(
-                                 len(deleted)))
+                                 len(to_delete)))
+            to_delete.delete()
         else:
             pass
     elif action == "import_only":
