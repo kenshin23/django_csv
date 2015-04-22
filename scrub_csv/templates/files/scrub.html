@@ -1,5 +1,11 @@
 {% extends "base.html" %}
+
+{% load staticfiles %}
 {% load bootstrap3 %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
 
 {% block title %}File import results{% endblock %}
 {% block content %}

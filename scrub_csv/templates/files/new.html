@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{# Extra files for File JS Plugin #}
+{% block bootstrap3_extra_head %}
+    <link href="{% static 'scrub_csv/bootstrap-fileinput/css/fileinput.min.css' %}" media="all" rel="stylesheet" type="text/css" />
+{% endblock %}
+
+{% block title %}Upload a file{% endblock %}
+{% block content %}
+<div class="row">
+    <form role="form" class="form-horizontal" action="{% url 'files:new' uploader_id %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <p>{{ form.non_field_errors }}</p>
+        <p>{{ form.csvfile.label_tag }} {{ form.csvfile.help_text }}</p>
+        <p>
+            {{ form.csvfile.errors }}
+            {{ form.csvfile }}
+        </p>
+        <p><input type="submit" value="Upload" /></p>
+    </form>
+</div>
+<div class="row">
+    <p><a href="{% url 'files:index' uploader_id %}">Go back to file index page.</a></p>
+</div>
+{% endblock%}
+
+{# File JS Plugin #}
+{% block bootstrap3_extra_script %}
+    <script src="{% static 'scrub_csv/bootstrap-fileinput/js/fileinput.min.js' %}"></script>
+    <!-- optionally if you need translation for your language then include 
+    locale file as mentioned below -->
+    <!--
+    <script src="{% static 'scrub_csv/bootstrap-fileinput/js/fileinput_locale_es.js' %}"></script>
+    -->
+{% endblock %}
