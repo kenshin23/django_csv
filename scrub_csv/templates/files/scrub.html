@@ -9,25 +9,29 @@
     </div>
     <div class="col-md-9">
         {% ifequal action "import_only" %}
-        <p>
-            The file's records have been imported, you can now return to the
-            file index page.
-        </p>
+            <p>
+                The file's records have been imported, you can now return to the
+                file index page.
+            </p>
         {% else %}
-        <p>
-            The file's records have been imported and scrubbed against the
-            database; the records {% ifequal action "scrub_save" %}have been
-            saved to the database.{% else %}have been discarded.{% endifequal %}
-        </p>
-        <p>
-            You can download the resulting scrub files below:
-        </p>
-        <p>
-            <a href="{% url 'files:download' uploader_id document.id "found_file" %}">Records found in database</a>
-        </p>
-        <p>
-            <a href="{% url 'files:download' uploader_id document.id "not_found_file" %}">Records missing from database</a>
-        </p>
+            <p>
+                The file's records have been imported and scrubbed against the
+                database; the records {% ifequal action "scrub_save" %}have been
+                saved to the database.{% else %}have been discarded.{% endifequal %}
+            </p>
+            <p>
+                You can download the resulting scrub files below:
+            </p>
+            {% if document.found_file %}
+            <p>
+                <a href="{% url 'files:download' uploader_id document.id "found_file" %}">Records found in database</a>
+            </p>
+            {% endif %}
+            {% if document.not_found_file %}
+            <p>
+                <a href="{% url 'files:download' uploader_id document.id "not_found_file" %}">Records missing from database</a>
+            </p>
+            {% endif %}
         {% endifequal %}
     </div>
 </div>
