@@ -240,7 +240,8 @@ def scrub(request, uploader_id, document_id, action):
     document = get_object_or_404(Document, pk=document_id)
     context = {
         'uploader_id': uploader.id,
-        'document': document
+        'document': document,
+        'action': action
     }
 
     # Scrub the file against the database:
@@ -283,12 +284,14 @@ def scrub(request, uploader_id, document_id, action):
 
         import json
         # Convert the found rows into CSV format:
-        found_content = convert_to_csv(found_rows,
-                                       'temp_found.csv')
+        found_content = convert_to_csv(document,
+                                       found_rows,
+                                       'found_rows')
         print json.dumps(found_content, sort_keys=True,
                          indent=4, separators=(',', ': '))
-        not_found_content = convert_to_csv(not_found_rows,
-                                           'temp_not_found.csv')
+        not_found_content = convert_to_csv(document,
+                                           not_found_rows,
+                                           'not_found_rows')
         print json.dumps(not_found_content, sort_keys=True,
                          indent=4, separators=(',', ': '))
 
@@ -322,7 +325,26 @@ def scrub(request, uploader_id, document_id, action):
     return render(request, 'files/scrub.html', context)
 
 
-def convert_to_csv(row_queryset, filename):
+def convert_to_csv(document, row_queryset, file_type):
+    import os
+    from datetime import datetime
+    from django.conf import settings
+
+    if file_type == "found_rows":
+        filename = "foundrecords.csv"
+    elif file_type == "not_found_rows":
+        filename = "missingrecords.csv"
+    else:
+        pass  # TODO: error, handle this later
+
+    dtime = datetime.now()
+    path = os.path.join(settings.MEDIA_ROOT, 'downloads',
+                        str(dtime.year), str(dtime.month).zfill(2),
+                        str(dtime.day).zfill(2), filename)
+    folder = os.path.dirname(path)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
     csv_header = list()
     csv_content = list()
 
@@ -343,15 +365,36 @@ def convert_to_csv(row_queryset, filename):
     # print "csv_content:"
     # print repr(csv_content)
 
-    with open(filename, 'wb') as f:
+    with open(path, 'wb') as f:
         df = File(f)
-        fullpath = df.name
         w = csv.DictWriter(df, csv_header)
         w.writeheader()
         w.writerows(csv_content)
 
+    if file_type == "found_rows":
+        document.found_file.name = path
+    elif file_type == "not_found_rows":
+        document.not_found_file.name = path
+    else:
+        pass  # TODO: error, handle this later
+    document.save()
+
     return csv_content
 
 
-def download_file(fullpath):
-    pass
+def download(request, uploader_id, document_id, file_type):
+    document = get_object_or_404(Document, pk=document_id)
+
+    if file_type == "found_file":
+        csv_file = document.found_file
+        filename = "foundrecords.csv"
+    elif file_type == "not_found_file":
+        csv_file = document.not_found_file
+        filename = "missingrecords.csv"
+    else:
+        pass  # error, actually.
+
+    response = HttpResponse(csv_file, content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename=' + filename
+
+    return response
