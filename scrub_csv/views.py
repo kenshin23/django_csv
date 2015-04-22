@@ -37,7 +37,7 @@ def new(request, uploader_id):
     if request.method == 'POST':
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
-            newdoc = Document(uploader=uploader.id,
+            newdoc = Document(uploader=uploader,
                               csvfile=request.FILES['csvfile'],
                               upload_date=datetime.datetime.now())
             newdoc.save()
