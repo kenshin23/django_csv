@@ -15,9 +15,10 @@
             </p>
         {% else %}
             <p>
-                The file's records have been imported and scrubbed against the
-                database; after scrubbing, the records {% ifequal action "scrub_save" %}have been
-                saved to the database.{% else %}have been discarded.{% endifequal %}
+                The file's records have been temporarily imported and scrubbed
+                against the database; after scrubbing, the records 
+                {% ifequal action "scrub_save" %}have been saved to the
+                database.{% else %}have been discarded.{% endifequal %}
             </p>
             <p>
                 You can download the resulting scrub files below:
