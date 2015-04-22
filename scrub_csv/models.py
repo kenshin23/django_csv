@@ -16,10 +16,10 @@ class Document(models.Model):
     uploader = models.ForeignKey(Uploader)
     csvfile = models.FileField(upload_to='uploads/%Y/%m/%d',
                                verbose_name='file')
-    found_file = models.FileField(upload_to='uploads/%Y/%m/%d',
+    found_file = models.FileField(upload_to='downloads/%Y/%m/%d',
                                   verbose_name='found records',
                                   blank=True, null=True)
-    not_found_file = models.FileField(upload_to='uploads/%Y/%m/%d',
+    not_found_file = models.FileField(upload_to='downloads/%Y/%m/%d',
                                       verbose_name='not found records',
                                       blank=True, null=True)
     upload_date = models.DateTimeField(auto_now_add=True,
