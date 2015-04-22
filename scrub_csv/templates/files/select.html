@@ -72,7 +72,7 @@ Select header fields for {{ document }}
                         <td>
                         <!-- Column options -->
                             <div class="form-group">
-                                <div class="col-md-6">
+                                <div class="col-md-6 column-radio-group{{ forloop.counter }}">
                                 {% if existing_keys_list %}
                                     <div class="radio">
                                         <label for="column_choice_select{{ forloop.counter }}">
@@ -158,9 +158,42 @@ Select header fields for {{ document }}
 {# Datatables JS #}
 {% block bootstrap3_extra_script %}
 <script>
-    $(document).ready(function() {
-        /* Column options */
-        $('.select_key, .custom_key').hide()
-    } );
+$(function () {
+    /* Column options */
+    function reset_fields(index) {
+        $('#select_key' + index).hide();
+        $('#custom_key' + index).prop("disabled", true);
+    }
+
+    $("div[class*='column-radio-group']").each(function( index ) {
+        reset_fields(index + 1);
+    });
+
+    $("input[name^='column_choice']").change(
+        function (e) {
+            column_num = $(this).attr("name").match(/\d+$/)[0];
+            reset_fields(column_num);
+            if ($(this).is(":checked")) {
+                switch($(this).val()) {
+                    case "select":
+                        // Click on 'select existing key':
+                        $('#select_key' + column_num).show().focus();
+                        break;
+                    case "header":
+                        // Click on 'use header as key':
+                        break;
+                    case "custom":
+                        // Click on 'enter custom name':
+                        $('#custom_key' + column_num).prop("disabled", false).focus();
+                        break;
+                    case "ignore":
+                        // Click on 'ignore column':
+                        break;
+                    default:
+                        false
+                }
+            }
+        });            
+});
 </script>
 {% endblock %}
