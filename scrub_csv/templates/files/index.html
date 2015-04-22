@@ -1,17 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Uploaded documents list{% endblock %}
+
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{% block bootstrap3_extra_head %}
+{% endblock %}
+
+{% block title %}
+Uploaded documents list
+{% endblock %}
+
 {% block content %}
+<div class="row">
 {% if latest_document_list %}
-    <ul>
-    {% for document in latest_document_list %}
-        <li><a href="{% url 'files:detail' uploader_id document.id %}">{{ document.csvfile.name }}</a></li>
-    {% endfor %}
-    </ul>
+    <p>Here are the latest files that you've uploaded:</p>
+    <div class="list-group">
+        {% for document in latest_document_list %}
+            <a href="{% url 'files:detail' uploader_id document.id %}" class="list-group-item">
+                {{ document }} - {{ document.csvfile.name }}
+            </a>
+        {% endfor %}
+    </div>
+    <p>
+        You can upload a new file <a href="{% url 'files:new' uploader_id %}">here</a>.
+    </p>
 {% else %}
-    <p>No uploaded files are available.</p>
+    <p>
+        No uploaded files are available. <a href="{% url 'files:new' uploader_id %}">Add a new one?</a>
+    </p>
 {% endif %}
-<p>
-    You can login to <a href="{% url 'admin:index' %}">the admin area</a> to add files.<br/>
-    Username: admin / Password: admin
-</p>
+</div>
 {% endblock%}
+
+{% block bootstrap3_extra_script %}
+{% endblock %}

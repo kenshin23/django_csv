@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 # from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, render_to_response
 from django.core.files import File
 from django.core.urlresolvers import reverse
 
@@ -27,9 +27,39 @@ def index(request, uploader_id):
 
 
 def new(request, uploader_id):
+    from django.template import RequestContext
+    from .forms import DocumentForm
+    import datetime
+
     uploader = get_object_or_404(Uploader, pk=uploader_id)
-    # TODO: Finish this method.
-    return HttpResponse("You're looking at the file upload page.")
+
+    # Handle file upload
+    if request.method == 'POST':
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            newdoc = Document(uploader=uploader,
+                              csvfile=request.FILES['csvfile'],
+                              upload_date=datetime.datetime.now())
+            newdoc.save()
+
+            # Redirect to the document list after POST
+            redirect_context = {
+                'uploader_id': uploader.id,
+                'document_id': newdoc.id
+            }
+            return HttpResponseRedirect(
+                reverse('files:detail', kwargs=redirect_context)
+            )
+    else:
+        form = DocumentForm()  # A empty, unbound form
+
+    # Render list page with the documents and the form
+    context = {
+        'form': form,
+        'uploader_id': uploader.id,
+    }
+    return render_to_response('files/new.html', context,
+                              context_instance=RequestContext(request))
 
 
 def detail(request, uploader_id, document_id):

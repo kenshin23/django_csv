@@ -1,16 +1,40 @@
 {% extends "base.html" %}
+
+{% load staticfiles %}
 {% load bootstrap3 %}
 
-{% block title %}{{ document.csvfile.name }}{% endblock %}
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript %}
+
+{% block bootstrap3_extra_head %}
+{% endblock %}
+
+{% block title %}
+File details
+{% endblock %}
+
 {% block content %}
-{% if document.record_set.all %}
+<div class="row">
+    You're looking at file: <strong>{{ document.csvfile.name }} - {{ document.csvfile.name }}</strong>
+</div>
+<div class="row">
+{% if document.row_set.all %}
     <ul>
-    {% for record in document.record_set.all %}
-        <li>{{ record.doc_key }}: {{ record.doc_value }}</li>
+    {% for row in document.row_set.all %}
+        {% for record in row.record_set.all %}
+            <li>{{ record.doc_key }}: {{ record.doc_value }}</li>
+        {% endfor %}
     {% endfor %}
     </ul>
 {% else %}
-    <p>The document doesn't appear to have been processed yet. <a href="{% url 'files:select_fields' uploader_id document.id %}">Do it?</a>
+    <p>This file doesn't appear to have been processed yet. <a href="{% url 'files:select_fields' uploader_id document.id %}">Do it?</a>
 {% endif %}
-<p><a href="{% url 'files:index' uploader_id %}">Go back to file index page.</a></p>
+</div>
+<div class="row">
+    <p><a href="{% url 'files:index' uploader_id %}">Go back to file index page.</a></p>
+</div>
+{% endblock %}
+
+{% block bootstrap3_extra_script %}
 {% endblock %}
