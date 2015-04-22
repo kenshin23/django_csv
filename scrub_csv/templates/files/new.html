@@ -7,7 +7,6 @@
 {% bootstrap_css %}
 {% bootstrap_javascript %}
 
-{# Extra files for File JS Plugin #}
 {% block bootstrap3_extra_head %}
     <link href="{% static 'scrub_csv/bootstrap-fileinput/css/fileinput.min.css' %}" media="all" rel="stylesheet" type="text/css" />
 {% endblock %}
@@ -23,7 +22,6 @@
             {{ form.csvfile.errors }}
             {{ form.csvfile }}
         </p>
-        <p><input type="submit" value="Upload" /></p>
     </form>
 </div>
 <div class="row">
@@ -31,7 +29,6 @@
 </div>
 {% endblock%}
 
-{# File JS Plugin #}
 {% block bootstrap3_extra_script %}
     <script src="{% static 'scrub_csv/bootstrap-fileinput/js/fileinput.min.js' %}"></script>
     <!-- optionally if you need translation for your language then include 

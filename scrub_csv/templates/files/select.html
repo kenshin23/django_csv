@@ -7,11 +7,20 @@
 {% bootstrap_css %}
 {% bootstrap_javascript %}
 
+{% block bootstrap3_extra_head %}
+{% endblock %}
+
 {% block title %}
-Select header fields for {{ document }}
+Select the file's header fields
 {% endblock %}
 
 {% block content %}
+    <div class="row">  
+        <p>
+            Please map each column in the file <strong>{{ document }}</strong>
+            to a field for processing.
+        <p>
+    </div> 
     {% if not error_message %}
     <div class="row">
         <form role="form" class="form-horizontal" action="{% url 'files:process' uploader_id document.id %}" method="post">
@@ -34,7 +43,7 @@ Select header fields for {{ document }}
                 <div class="radio">
                     <label for="action_scrub_only">
                         <input name="action" id="action_scrub_only" value="scrub_only" type="radio">
-                        Scrub against database, discard records.
+                        Scrub against database, but discard the records.
                   </label>
                 </div>
                 <div class="radio">
@@ -47,7 +56,10 @@ Select header fields for {{ document }}
         </div>
 
         <div class="file-details">
-            <p>Showing you the first {{ line_count }} line(s) of the file.</p>
+            <p>
+                Showing you the first {{ line_count }} line(s) of the file to 
+                help you map each field.
+            </p>
             <p>Now, please select one of the following for each column:</p>
             <ul>
             {% if existing_keys_list %}
@@ -124,13 +136,15 @@ Select header fields for {{ document }}
                 </tbody>
             </table>
         </div>
-
+    </div><!--/.row-->
+    <div class="row">
         <div class="file-analysis">
             <p>
                 Upon analysis, the first row of the file (highlighted in blue) {% if has_header %}appears{% else %}does not appear{% endif %} to be a header row. (This could be wrong, though.)<br/>
+            </p>
+            <p>
                 Please confirm below:
             </p>
-
             <div class="form-group">
                 <label class="col-md-4 control-label" for="has_header_row">The file does have a header row</label>
                 <div class="col-md-8">
@@ -155,7 +169,6 @@ Select header fields for {{ document }}
     <p><a href="{% url 'files:detail' uploader_id document.id %}">Go back to file details page.</a></p>
 {% endblock %}
 
-{# Column handling JS #}
 {% block bootstrap3_extra_script %}
 <script>
 $(function () {
