@@ -43,8 +43,13 @@ def new(request, uploader_id):
             newdoc.save()
 
             # Redirect to the document list after POST
-            return HttpResponseRedirect(reverse('files:detail'),
-                                        (uploader.id, newdoc.id))
+            redirect_context = {
+                'uploader_id': uploader.id,
+                'document_id': newdoc.id
+            }
+            return HttpResponseRedirect(
+                reverse('files:detail', kwargs=redirect_context)
+            )
     else:
         form = DocumentForm()  # A empty, unbound form
 
