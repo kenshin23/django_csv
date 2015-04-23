@@ -342,7 +342,7 @@ def scrub(request, uploader_id, document_id, action):
             # Now cleanup after the import:
             to_delete = Row.objects.filter(permanent=False)
             messages.success(request,
-                             "Scrubbed {} row(s) from the database".format(
+                             "Scrubbed {} row(s) against the database".format(
                                  len(to_delete)))
             to_delete.delete()
         else:
