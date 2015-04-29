@@ -103,14 +103,19 @@ def select_fields(request, uploader_id, document_id):
         has_header = sniffer.has_header(sample)
         f.seek(0)
         csv_f = unicodecsv.reader(f, dialect)
+
         number_rows = sum(1 for row in csv_f)
-        print "File has {} rows, including possible header row".format(
-            number_rows)
-        content = [row for row in csv_f]
-        if len(content) < get_lines:
-            line_count = len(content)
-        else:
-            line_count = get_lines
+        document.row_count = number_rows
+        document.save()
+
+        f.seek(0)
+        content = list()
+        for line in range(0, get_lines):
+            try:
+                content.append(csv_f.next())
+            except:
+                pass
+        line_count = len(content)
     finally:
         f.close()
 
@@ -118,7 +123,7 @@ def select_fields(request, uploader_id, document_id):
         'document': document,
         'uploader_id': uploader.id,
         'has_header': has_header,
-        'content': content[:line_count],
+        'content': content,
         'line_count': line_count,
         'error_message': error
     }
