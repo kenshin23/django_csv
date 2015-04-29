@@ -16,6 +16,8 @@ class Document(models.Model):
     uploader = models.ForeignKey(Uploader)
     csvfile = models.FileField(upload_to='uploads/%Y/%m/%d',
                                verbose_name='file')
+    row_count = models.PositiveIntegerField(default=0,
+                                            verbose_name='rows in file')
     found_file = models.FileField(upload_to='downloads/%Y/%m/%d',
                                   verbose_name='found records',
                                   blank=True, null=True)

@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse
 import functions
 
 from .models import Uploader, Document, Row, Record
-import csv
+import unicodecsv
 
 
 def index(request, uploader_id):
@@ -88,16 +88,24 @@ def select_fields(request, uploader_id, document_id):
     get_lines = 3
 
     try:
-        sample = f.read(1024)
-        sniffer = csv.Sniffer()
-        dialect = sniffer.sniff(sample)
+        sample = f.readline()
+        sniffer = unicodecsv.Sniffer()
+        dialect = sniffer.sniff(sample, delimiters=";,\t")
     except Exception as e:
+        # The file failed to be parsed as a valid CSV file.
+        # Attempt to read it as excel:
+        print sample
         error = "The file doesn't appear to be a valid CSV file."
+        print error
+        raise e
         # error += " The error was %s", str(repr(e))
     else:
         has_header = sniffer.has_header(sample)
         f.seek(0)
-        csv_f = csv.reader(f, dialect)
+        csv_f = unicodecsv.reader(f, dialect)
+        number_rows = sum(1 for row in csv_f)
+        print "File has {} rows, including possible header row".format(
+            number_rows)
         content = [row for row in csv_f]
         if len(content) < get_lines:
             line_count = len(content)
@@ -174,7 +182,7 @@ def process(request, uploader_id, document_id):
             csv_header = list()
 
             with open(d.csvfile.path) as f:
-                csv_f = csv.reader(f)
+                csv_f = unicodecsv.reader(f)
 
                 # Skip the header row from importing:
                 if has_header_row:
@@ -397,7 +405,7 @@ def convert_to_csv(document, row_queryset, file_type):
 
     with open(path, 'wb') as f:
         df = File(f)
-        w = csv.DictWriter(df, csv_header)
+        w = unicodecsv.DictWriter(df, csv_header)
         w.writeheader()
         w.writerows(csv_content)
 
