@@ -91,14 +91,18 @@ def select_fields(request, uploader_id, document_id):
         sample = f.readline()
         sniffer = unicodecsv.Sniffer()
         dialect = sniffer.sniff(sample, delimiters=";,\t")
-    except Exception as e:
+    except:
         # The file failed to be parsed as a valid CSV file.
-        # Attempt to read it as excel:
         print sample
         error = "The file doesn't appear to be a valid CSV file."
-        print error
-        raise e
-        # error += " The error was %s", str(repr(e))
+        messages.error(request, error)
+        redirect_context = {
+            'document': document,
+            'uploader_id': uploader.id,
+        }
+        return HttpResponseRedirect(
+            reverse('files:detail', kwargs=redirect_context)
+        )
     else:
         has_header = sniffer.has_header(sample)
         f.seek(0)
